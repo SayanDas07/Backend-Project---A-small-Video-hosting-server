@@ -457,9 +457,13 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
         //get the subscribers
         {
             $lookup : {
+                //model name
                 from : "subscriptions",
+                //local field in user model
                 localField : "_id",
+                //foreign field in subscription model
                 foreignField : "channel",
+                //output field name
                 as : "subscribers"
             }
 
@@ -487,6 +491,7 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
                 },
                 isSubscribed : {
                     $cond : {
+                        //if the user is logged in, then check if the user is subscribed to the channel
                         if : {$in : [req.user?._id, "$subscribers.subscriber"]},
                         then : true,
                         else : false
@@ -512,6 +517,8 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
         }
     ])
 
+    console.log("channel is ",channel)
+
     if (!channel?.length) {
         throw new ApiError(404, "Channel not found")
         
@@ -524,5 +531,5 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
 })
 
 
-export{ registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage}
+export{ registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile}
 
