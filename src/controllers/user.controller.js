@@ -4,6 +4,7 @@ import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken'
+import e from 'express'
 
 
 //Method for generating access token and refresh token
@@ -435,8 +436,92 @@ const updateUserCoverImage = asyncHandler(async(req,res) => {
 })
 
 
+const getUserChannelProfile = asyncHandler( async(req,res) => {
+    // get username from url
+    const {username} = req.params
 
+    if (!username?.trim()) {
+        throw new ApiError(400, "Username is missing")
+        
+    }
 
+    const channel = await User.aggregate([
+        //first pipeline
+        //match the username with the username in db and get one user
+        {
+            $match : {
+                username : username?.toLowerCase()
+            }
+        },
+        //second pipeline
+        //get the subscribers
+        {
+            $lookup : {
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "channel",
+                as : "subscribers"
+            }
+
+        },
+        //third pipeline
+        //get whom the user is subscribed to
+        {
+            $lookup : {
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "subscriber",
+                as : "subscribedTo"
+            
+            }
+        },
+        //fourth pipeline
+        {
+            $addFields : {
+                subscribersCount : {
+                    $size : "$subscribers"
+                },
+                channelSubscribedToCount : {
+                    $size : "$subscribedTo"
+                
+                },
+                isSubscribed : {
+                    $cond : {
+                        if : {$in : [req.user?._id, "$subscribers.subscriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+
+            }
+        },
+        //fifth pipeline
+        {
+            $project : {
+                fullName : 1,
+                username : 1,
+                avatar : 1,
+                coverImage : 1,
+                subscribersCount : 1,
+                channelSubscribedToCount : 1,
+                isSubscribed : 1,
+                email : 1,
+                createdAt : 1
+
+            }
+        }
+    ])
+
+    if (!channel?.length) {
+        throw new ApiError(404, "Channel not found")
+        
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, channel[0], "Channel profile fetched successfully")
+    )
+    
+})
 
 
 export{ registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage}

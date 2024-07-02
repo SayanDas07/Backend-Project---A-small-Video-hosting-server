@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(express.static("public"));
 
 app.use(cookieParser()); // parse cookies
+//cookie parser is a middle ware that parses cookies attached to the client request object
 
 
 //router import
