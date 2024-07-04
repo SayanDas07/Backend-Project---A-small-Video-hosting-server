@@ -232,7 +232,10 @@ const logoutUser = asyncHandler(async (req,res) => {
         //query
         req.user._id,
         {
-            refreshToken : undefined
+            $unset : {
+                refreshToken : 1 //remove the field
+            }
+
         },
         {
             new : true
