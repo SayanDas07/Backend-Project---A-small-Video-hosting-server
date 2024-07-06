@@ -4,7 +4,8 @@ import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken'
-import e from 'express'
+import mongoose from "mongoose";
+
 
 
 //Method for generating access token and refresh token
@@ -346,64 +347,64 @@ const changeCurrentPassword = asyncHandler(async(req,res) => {
 
 //END POINT FOR GETTING CURRENT USER =>
 const getCurrentUser = asyncHandler(async(req,res)=>{
-    return res.ststus(200).json(
+    return res.status(200).json(
         new ApiResponse(200, req.user, "current user fetched successfully")
     
     )
 })
 
-const updateAccountDetails = asyncHandler(async(req,res) => {
+const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullName, email} = req.body
 
-    if (!fullName && !email) {
+    if (!fullName || !email) {
         throw new ApiError(400, "All fields are required")
-        
     }
-    const user = User.findByIdAndUpdate(
+
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
                 fullName,
-                email
+                email: email
             }
         },
-        {new : true}
+        {new: true}
+        
     ).select("-password")
 
-    return res.status(200).json(
-        new ApiResponse(200, user, "Account details updated successfully")
-    )
+    return res.status(200).json(new ApiResponse(200, user, "Account details updated successfully"))
+});
 
-})
-
-const updateUserAvatar = asyncHandler(async(req,res) => {
-
+const updateUserAvatar = asyncHandler(async(req, res) => {
     const avatarLocalPath = req.file?.path
 
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar is required")
-        
+        throw new ApiError(400, "Avatar file is missing")
     }
+
+
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     if (!avatar.url) {
-        throw new ApiError(400, "Failed to upload avatar")
+        throw new ApiError(400, "Error while uploading on avatar")
         
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set: {
-                avatar : avatar.url
+            $set:{
+                avatar: avatar.url
             }
         },
-        {new : true}
+        {new: true}
     ).select("-password")
 
-    return res.status(200).json(
-        new ApiResponse(200, user, "Avatar updated successfully")
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Avatar image updated successfully")
     )
 })
 
@@ -423,7 +424,7 @@ const updateUserCoverImage = asyncHandler(async(req,res) => {
         
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
