@@ -37,7 +37,9 @@ app.use("/api/v1/subscribers", subsRouter);
 // http://localhost:8000/api/v1/subscribers
 
 
-
+import tweetRouter from "./routes/tweet.routes.js";
+app.use("/api/v1/tweets", tweetRouter);
+// http://localhost:8000/api/v1/tweets/
 
 
 
